@@ -36,7 +36,7 @@ class Employee extends Model
 
     public function salary()
     {
-        return $this->hasOne(Salary::class);
+        return $this->hasMany(Salary::class);
     }
 
     public function scopeIsActive($query)

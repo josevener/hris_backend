@@ -16,7 +16,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::isActive()->get();
+        $users = User::isActive()->paginate(10);
 
         return response()->json($users, 200);
     }
@@ -132,9 +132,15 @@ class UserController extends Controller
 
     public function userProfile()
     {
-        $userProfile = User::findOrFail(2);
-
+        $userProfile = User::findOrFail(1);
         return response()->json($userProfile);
+    }
+
+    public function getCurrentUser()
+    {
+        $currentUser = User::findOrFail(1);
+        $currentUser->createToken('authToken')->plainTextToken;
+        return response()->json($currentUser);
     }
 
     public function checkEmail(Request $request)

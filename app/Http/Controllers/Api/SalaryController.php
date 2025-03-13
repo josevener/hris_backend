@@ -16,15 +16,19 @@ class SalaryController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function employeesDoesntHaveSalary()
+    {
+        $employees = Employee::whereDoesntHave('salary')->isActive()->get();
+
+        return response()->json($employees);
+    }
+
     public function index()
     {
-        $salaries = Salary::all();
+        $salaries = Salary::with('employee')->isActive()->get();
 
-        if ($salaries->count() > 0) {
-            return response()->json($salaries);
-        } else {
-            return response()->json(['message' => 'No data found'], 404);
-        }
+        return response()->json($salaries);
     }
 
     /**

@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('payroll_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('payroll_id')->constrained('payrolls')->onDelete('cascade');
-            $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
+            $table->unsignedBigInteger('payroll_id')->nullable()->change();
+            $table->unsignedBigInteger('employee_id')->nullable()->change();
             $table->enum('type', ['earning', 'deduction', 'contribution']);
             $table->string('category');
             $table->decimal('amount', 10, 2);

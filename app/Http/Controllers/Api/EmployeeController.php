@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\Salary;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
 {
@@ -119,6 +121,12 @@ class EmployeeController extends Controller
         $employee = Employee::findOrFail($id);
         $employee->isActive = 0;
         $employee->save();
+
+        $salary = Salary::findOrFail($employee->id);
+        $salary->isActive = 0;
+        $salary->save();
+
+
         return response()->json(['message', 'Employee has been successfully deleted!']);
     }
 }

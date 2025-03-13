@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('net_salary', 10, 2)->default(0);
             $table->date('pay_date');
             $table->enum('status', ['pending', 'processed', 'paid'])->default('pending');
+            $table->tinyInteger('isActive')->default(1);
             $table->timestamps();
         });
     }

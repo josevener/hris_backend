@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\PayrollItemController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\DepartmentController;
@@ -45,7 +47,20 @@ Route::post('/salary', [SalaryController::class, 'store']);
 Route::get('/salary/{salary}', [SalaryController::class, 'show']);
 Route::put('/salary/{salary}', [SalaryController::class, 'update']);
 Route::delete('/salary/{id}', [SalaryController::class, 'destroy']);
+Route::get('/employees-doesnt-have-salary', [SalaryController::class, 'employeesDoesntHaveSalary']);
 
+# PAYROLL Management
+Route::get('/payroll', [PayrollController::class, 'index']);
+Route::post('/payroll', [PayrollController::class, 'store']);
+Route::get('/payroll/{payroll}', [PayrollController::class, 'show']);
+Route::put('/payroll/{payroll}', [PayrollController::class, 'update']);
+Route::delete('/payroll/{id}', [PayrollController::class, 'destroy']);
+Route::post('payrolls/generate', [PayrollController::class, 'generate']);
+Route::get('payrolls/{payroll}/items', [PayrollController::class, 'items']);
+Route::post('payrolls/preview', [PayrollController::class, 'preview']);
+
+# PAYROLL ITEM Management
+Route::apiResource('payroll-items', PayrollItemController::class);
 
 # AUTHENTICATION
 
