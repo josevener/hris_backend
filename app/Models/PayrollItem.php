@@ -15,6 +15,9 @@ class PayrollItem extends Model
         'type',
         'category',
         'amount',
+        'start_date',
+        'end_date',
+        'scope',
     ];
 
     public function payroll()

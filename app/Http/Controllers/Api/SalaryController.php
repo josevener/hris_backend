@@ -43,20 +43,11 @@ class SalaryController extends Controller
      * Store a newly created resource in storage.
      */
 
-    public function store(Request $request)
+    public function store(StoreSalaryRequest $request)
     {
         try {
-            // $validated = $request->validated();
 
-            $request->validate([
-                'employee_id' => 'required|numeric',
-                'basic_salary' => 'required|numeric',
-                'pay_period' => 'required|string',
-                'start_date' => 'required|date',
-                'end_date' => 'nullable|date',
-            ]);
-
-            $salary = Salary::create($request->all());
+            $salary = Salary::create($request->validated());
 
             // Update the Employee record with the new salary_id
             $employee = Employee::find($request->employee_id);

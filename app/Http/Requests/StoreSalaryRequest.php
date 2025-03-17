@@ -11,7 +11,7 @@ class StoreSalaryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,7 @@ class StoreSalaryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => ['required', 'numeric'],
+            'employee_id' => ['required', 'numeric', 'exists:employees,id'],
             'basic_salary' => ['required', 'numeric'],
             'pay_period' => ['required', 'string'],
             'start_date' => ['required', 'date'],

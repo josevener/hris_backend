@@ -36,7 +36,7 @@ class Payroll extends Model
         return $this->belongsTo(Salary::class);
     }
 
-    public function items()
+    public function payroll_items()
     {
         return $this->hasMany(PayrollItem::class);
     }

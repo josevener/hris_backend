@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payroll_items', function (Blueprint $table) {
+        Schema::create('payroll_cycles', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('payroll_id')->nullable();
-            $table->unsignedBigInteger('employee_id')->nullable();
-            $table->enum('type', ['earning', 'deduction', 'contribution']);
-            $table->string('category');
-            $table->decimal('amount', 10, 2);
+            $table->foreignId('payroll_config_id')->constrained()->onDelete('cascade');
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->date('pay_date');
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payroll_items');
+        Schema::dropIfExists('payroll_cycles');
     }
 };

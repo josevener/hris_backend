@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePayrollRequest;
 use App\Models\Employee;
 use App\Models\Payroll;
-use App\Http\Requests\StorePayrollRequest;
-use App\Http\Requests\UpdatePayrollRequest;
 use App\Models\PayrollItem;
 use App\Models\Salary;
 use Carbon\Carbon;
@@ -15,7 +14,16 @@ use Illuminate\Http\Request;
 class PayrollController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of payrolls.
+     */
+    public function index()
+    {
+        $payrolls = Payroll::with('employee.user', 'salary')->paginate(6);
+        return response()->json($payrolls, 200);
+    }
+
+    /**
+     * Preview payroll for an employee.
      */
     public function preview(Request $request)
     {
@@ -44,61 +52,8 @@ class PayrollController extends Controller
         ], 200);
     }
 
-    public function items(Payroll $payroll)
-    {
-        $items = PayrollItem::where('payroll_id', $payroll->id)->get();
-        return response()->json($items, 200);
-    }
-
-    public function index()
-    {
-        $payrolls = Payroll::with('employee.user', 'salary')->paginate(6);
-        return response()->json($payrolls, 200);
-    }
-
     /**
-     * Show the form for creating a new resource.
-     */
-
-    public function create()
-    {
-        $employees = Employee::all();
-        $salaries = Salary::all();
-        return view('payrolls.create', compact('employees', 'salaries'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'employee_id' => 'nullable|exists:employees,id',
-            'salary_id' => 'nullable|exists:salaries,id',
-            'pay_date' => 'required|date',
-            'start_date' => 'required|date|before_or_equal:pay_date',
-            'end_date' => 'required|date|after_or_equal:start_date|before_or_equal:pay_date',
-            'status' => 'required|in:pending,processed,paid',
-        ]);
-
-        $payroll = Payroll::create($request->all());
-        $salary = Salary::findOrFail($request->salary_id);
-
-        PayrollItem::create([
-            'payroll_id' => $payroll->id,
-            'employee_id' => $payroll->employee_id,
-            'scope' => 'specific',
-            'type' => 'earning',
-            'category' => 'Basic Salary',
-            'amount' => $salary->basic_salary,
-        ]);
-
-        $payroll->refresh();
-        return response()->json(['payroll' => $payroll->load('employee', 'salary')], 201);
-    }
-
-    /**
-     * Display the specified resource.
+     * Show payroll details.
      */
     public function show(Payroll $payroll)
     {
@@ -107,21 +62,22 @@ class PayrollController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Store a new payroll.
      */
-    public function edit(Payroll $payroll)
+    public function store(StorePayrollRequest $request)
     {
-        $employees = Employee::all();
-        $salaries = Salary::all();
-        return response()->json($payroll, 200);
+        $payroll = Payroll::create($request->validated());
+
+        return response()->json(['payroll' => $payroll->load('employee')], 201);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update payroll details.
      */
     public function update(Request $request, $id)
     {
         $payroll = Payroll::findOrFail($id);
+
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'salary_id' => 'required|exists:salaries,id',
@@ -137,7 +93,7 @@ class PayrollController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete payroll.
      */
     public function destroy(Payroll $payroll)
     {
@@ -145,6 +101,9 @@ class PayrollController extends Controller
         return response()->json(['message' => 'Payroll deleted successfully'], 200);
     }
 
+    /**
+     * Generate payroll automatically.
+     */
     public function generate()
     {
         $salaries = Salary::where('isActive', 1)->with('employee')->get();
@@ -159,36 +118,30 @@ class PayrollController extends Controller
         }
 
         return response()->json([
-            'message' => `Payroll generation completed. Generated $generatedCount payrolls.`
+            'message' => "Payroll generation completed. Generated $generatedCount payrolls."
         ], 200);
     }
 
+    /**
+     * Calculate payroll period end date.
+     */
     public function calculatePayPeriodEnd(Salary $salary)
     {
-        $startDate = Carbon::parse($salary->start_date);
         $today = Carbon::now();
+        $startDate = Carbon::parse($salary->start_date);
 
-        switch ($salary->pay_period) {
-            case 'monthly':
-                $periodEnd = $startDate->copy()->addMonths(
-                    (int) floor($today->diffInMonths($startDate))
-                )->endOfMonth();
-                return $periodEnd;
-            case 'bi-weekly':
-                $daysSinceStart = $startDate->diffInDays($today);
-                $periods = (int) floor($daysSinceStart / 14);
-                return $startDate->copy()->addDays($periods * 14);
-            case 'weekly':
-                $daysSinceStart = $startDate->diffInDays($today);
-                $periods = (int) floor($daysSinceStart / 7);
-                return $startDate->copy()->addDays($periods * 7);
-            case 'daily':
-                return $today->copy();
-            default:
-                throw new \Exception("Invalid pay period");
-        }
+        return match ($salary->pay_period) {
+            'monthly' => $today->endOfMonth(),
+            'bi-weekly' => $startDate->copy()->addWeeks(floor($today->diffInDays($startDate) / 2)),
+            'weekly' => $startDate->copy()->addWeeks(floor($today->diffInDays($startDate) / 7)),
+            'daily' => $today,
+            default => throw new \Exception("Invalid pay period"),
+        };
     }
 
+    /**
+     * Check if payroll already exists.
+     */
     private function payrollExists(Salary $salary, Carbon $payPeriodEnd): bool
     {
         return Payroll::where('employee_id', $salary->employee_id)
@@ -197,6 +150,9 @@ class PayrollController extends Controller
             ->exists();
     }
 
+    /**
+     * Create payroll entry.
+     */
     private function createPayroll(Salary $salary, Carbon $payPeriodEnd)
     {
         $payroll = Payroll::create([
@@ -207,34 +163,11 @@ class PayrollController extends Controller
             'total_earnings' => 0,
             'total_deductions' => 0,
             'net_salary' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
-
-        // Add basic salary as an earning
-        PayrollItem::create([
-            'payroll_id' => $payroll->id,
-            'employee_id' => $salary->employee_id,
-            'type' => 'earning',
-            'category' => 'Basic Salary',
-            'amount' => $salary->basic_salary,
-        ]);
-
-        // Example deduction: 10% tax (customize as needed)
-        PayrollItem::create([
-            'payroll_id' => $payroll->id,
-            'employee_id' => $salary->employee_id,
-            'type' => 'deduction',
-            'category' => 'Tax',
-            'amount' => $salary->basic_salary * 0.1,
-        ]);
-
-        // Placeholder for attendance-based items (future)
-        // Example: if ($attendance) { addOvertimeItem($payroll, $attendance); }
 
         // Calculate totals
-        $totalEarnings = $payroll->items()->where('type', 'earning')->sum('amount');
-        $totalDeductions = $payroll->items()->where('type', 'deduction')->sum('amount');
+        $totalEarnings = PayrollItem::where('payroll_id', $payroll->id)->where('type', 'earning')->sum('amount');
+        $totalDeductions = PayrollItem::where('payroll_id', $payroll->id)->where('type', 'deduction')->sum('amount');
         $netSalary = $totalEarnings - $totalDeductions;
 
         $payroll->update([

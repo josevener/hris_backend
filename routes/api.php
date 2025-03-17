@@ -1,13 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\PayrollConfigController;
 use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\PayrollCyclesController;
 use App\Http\Controllers\Api\PayrollItemController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DesignationController;
 use App\Http\Controllers\Api\SalaryController;
+use App\Models\PayrollCycle;
 use Illuminate\Support\Facades\Route;
 
 
@@ -61,6 +64,12 @@ Route::post('payrolls/preview', [PayrollController::class, 'preview']);
 
 # PAYROLL ITEM Management
 Route::apiResource('payroll-items', PayrollItemController::class);
+
+# PAYROLL CONFIG
+Route::apiResource('payroll-config', PayrollConfigController::class)->only(['index', 'store']);
+
+# PAYROLL CYCLES
+Route::apiResource('payroll-cycles', PayrollCyclesController::class)->only(['index', 'store']);
 
 # AUTHENTICATION
 
