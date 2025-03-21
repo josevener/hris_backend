@@ -15,9 +15,7 @@ class Payroll extends Model
         'total_earnings',
         'total_deductions',
         'net_salary',
-        'pay_date',
-        'start_date',
-        'end_date',
+        'payroll_cycles_id',
         'status'
     ];
     protected $casts = [

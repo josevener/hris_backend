@@ -49,19 +49,9 @@ class PayrollItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StorePayrollItemRequest $request)
     {
-        $request->validate([
-            'employee_id' => 'nullable|exists:employees,id|required_if:scope,specific',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'scope' => 'required|in:specific,global',
-            'type' => 'required|in:earning,deduction,contribution',
-            'category' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-        ]);
-
-        $payrollItem = PayrollItem::create($request->all());
+        $payrollItem = PayrollItem::create($request->validated());
         return response()->json($payrollItem->load('employee.user', 'payroll'), 201);
     }
 

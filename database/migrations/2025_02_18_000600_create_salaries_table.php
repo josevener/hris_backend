@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('pay_period')->default('monthly');
             $table->date('start_date');
             $table->date('end_date')->nullable();
-            $table->tinyInteger('isActive')->default(1);
+
             $table->timestamps();
         });
     }

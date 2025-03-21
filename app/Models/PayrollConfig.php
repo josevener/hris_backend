@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PayrollConfig extends Model
 {
-    use SoftDeletes; // Enable soft deletes
+    use SoftDeletes;
 
     protected $fillable = [
         'start_year_month',

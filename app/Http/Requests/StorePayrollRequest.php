@@ -24,7 +24,7 @@ class StorePayrollRequest extends FormRequest
         return [
             'employee_id' => 'nullable|exists:employees,id',
             'salary_id' => 'nullable|exists:salaries,id',
-            'payroll_cycle_id' => 'required|exists:payroll_cycles,id',
+            'payroll_cycles_id' => 'required|exists:payroll_cycles,id',
             'pay_date' => 'nullable|date',
             'total_earnings' => 'nullable|numeric',
             'total_deductions' => 'nullable|numeric',

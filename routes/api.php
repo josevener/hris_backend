@@ -37,11 +37,7 @@ Route::put('/users/{user}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
 # EMPLOYEE Management
-Route::get('/employees', [EmployeeController::class, 'index']);
-Route::post('/employees', [EmployeeController::class, 'store']);
-Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
-Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
-Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+Route::apiResource('employees', EmployeeController::class)->except('create');
 Route::get('/users-doesnt-have-employee', [EmployeeController::class, 'usersDoesntHaveEmployee']);
 
 # SALARY Management
@@ -66,7 +62,7 @@ Route::post('payrolls/preview', [PayrollController::class, 'preview']);
 Route::apiResource('payroll-items', PayrollItemController::class);
 
 # PAYROLL CONFIG
-Route::apiResource('payroll-config', PayrollConfigController::class)->only(['index', 'store']);
+Route::apiResource('payroll-config', PayrollConfigController::class);
 
 # PAYROLL CYCLES
 Route::apiResource('payroll-cycles', PayrollCyclesController::class)->only(['index', 'store']);

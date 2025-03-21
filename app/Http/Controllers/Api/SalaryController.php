@@ -9,7 +9,7 @@ use App\Http\Requests\UpdateSalaryRequest;
 use App\Models\Employee;
 use Exception;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Date;
 
 class SalaryController extends Controller
 {
@@ -19,24 +19,16 @@ class SalaryController extends Controller
 
     public function employeesDoesntHaveSalary()
     {
-        $employees = Employee::whereDoesntHave('salary')->isActive()->get();
+        $employees = Employee::whereDoesntHave('salary')->whereNull('deleted_at')->get();
 
         return response()->json($employees);
     }
 
     public function index()
     {
-        $salaries = Salary::with('employee')->isActive()->get();
+        $salaries = Salary::with('employee.user')->whereNull('deleted_at')->get();
 
         return response()->json($salaries);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -46,7 +38,16 @@ class SalaryController extends Controller
     public function store(StoreSalaryRequest $request)
     {
         try {
+            // Check if an active salary record already exists for the employee
+            $existingSalary = Salary::where('employee_id', $request->employee_id)
+                ->whereNull('deleted_at') // Only count non-soft-deleted records
+                ->first();
 
+            if ($existingSalary) {
+                return response()->json(['message' => 'A salary record already exists for this employee.'], 422);
+            }
+
+            // Create the new salary record
             $salary = Salary::create($request->validated());
 
             // Update the Employee record with the new salary_id
@@ -56,7 +57,8 @@ class SalaryController extends Controller
                 $employee->save();
             }
 
-            return response()->json(['message' => 'Salary created successfully'], 201);
+            $currentTimeStamp = now();
+            return response()->json(['message' => 'Salary created successfully ' . $currentTimeStamp], 201);
         } catch (Exception $e) {
             return response()->json(['message' => 'Error creating salary: ' . $e->getMessage()], 500);
         }
@@ -67,25 +69,36 @@ class SalaryController extends Controller
      */
     public function show(Salary $salary)
     {
-        return response()->json($salary);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Salary $salary)
-    {
-        //
+        $activeSalary = $salary->with('employee.user')->whereNull('deleted_at')->get();
+        return response()->json($activeSalary);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Salary $salary)
+    public function update(UpdateSalaryRequest $request, Salary $salary)
     {
         try {
-            $salary->update($request->all());
-            return response()->json(['message' => 'Salary updated successfully'], 200);
+            // Update the existing salary's end_date and soft-delete it
+            $salary->update(['end_date' => $request->end_date]);
+            $salary->delete(); // Soft delete the old salary record
+
+            // Create a new salary record
+            $newSalary = Salary::create([
+                'employee_id' => $request->employee_id,
+                'basic_salary' => $request->basic_salary,
+                'pay_period' => $request->pay_period,
+                'start_date' => $request->end_date, // New salary starts where old one ends
+                'end_date' => null, // Optionally set this if needed
+            ]);
+
+            // Update the employee's salary_id with the new salary
+            $employee = Employee::findOrFail($request->employee_id);
+            $employee->salary_id = $newSalary->id; // Use the new salary ID
+            $employee->save();
+
+            $currentTimestamp = now();
+            return response()->json(['message' => "Salary updated successfully at $currentTimestamp"], 200);
         } catch (Exception $e) {
             return response()->json(['message' => 'Error updating salary: ' . $e->getMessage()], 500);
         }
@@ -99,12 +112,13 @@ class SalaryController extends Controller
         try {
 
             $salary = Salary::findOrFail($id);
-            $salary->isActive = 0; // Set the isActive value to 0 for soft delete
-            $salary->save();
+            $salary->delete();
 
-            return response()->json(['message' => 'Salary deleted successfully'], 200);
+            $currentTimeStamp = now();
+
+            return response()->json(['message' => "Salary deleted successfully at $currentTimeStamp"], 200);
         } catch (Exception $e) {
-            return response()->json(['message' => 'Error deleting salary'], 500);
+            return response()->json(['message' => 'Error deleting salary: ' . $e->getMessage()], 500);
         }
     }
 }

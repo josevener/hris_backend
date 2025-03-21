@@ -14,4 +14,9 @@ class PayrollCycle extends Model
     {
         return $this->belongsTo(PayrollConfig::class);
     }
+
+    public function payroll_items()
+    {
+        return $this->hasMany(PayrollItem::class);
+    }
 }

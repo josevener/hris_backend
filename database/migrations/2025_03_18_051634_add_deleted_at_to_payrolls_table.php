@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payrolls', function (Blueprint $table) {
-            $table->date('start_date')->nullable()->after('pay_date'); // Add start_date after pay_date
-            $table->date('end_date')->nullable()->after('start_date');  // Add end_date after start_date
+            $table->softDeletes();
         });
     }
 
@@ -23,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('payrolls', function (Blueprint $table) {
-            $table->dropColumn(['start_date', 'end_date']);
+            $table->dropSoftDeletes();
         });
     }
 };

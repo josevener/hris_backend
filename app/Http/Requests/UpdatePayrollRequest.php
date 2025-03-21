@@ -11,7 +11,7 @@ class UpdatePayrollRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class UpdatePayrollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'employee_id' => 'required|exists:employees,id',
+            'salary_id' => 'required|exists:salaries,id',
+            'pay_date' => 'required|date',
+            'start_date' => 'required|date|before_or_equal:pay_date',
+            'end_date' => 'required|date|after_or_equal:start_date|before_or_equal:pay_date',
+            'status' => 'required|in:pending,processed,paid',
         ];
     }
 }

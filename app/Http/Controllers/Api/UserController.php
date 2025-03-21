@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\Employee;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -16,7 +17,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::isActive()->paginate(10);
+        $users = User::whereNull('deleted_at')->paginate(10);
 
         return response()->json($users, 200);
     }
@@ -24,20 +25,10 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
         try {
-            $request->validate([
-                'lastname' => 'required|string|max:255',
-                'firstname' => 'required|string|max:255',
-                'middlename' => 'nullable|string|max:255',
-                'extension' => 'nullable|string|max:255',
-                'role_name' => 'required|string',
-                'profile_image' => 'nullable|string',
-                'phone_number' => 'nullable|string|max:255',
-                'email' => 'required|email|unique:users',
-                'password' => 'required|min:8',
-            ]);
+            $request->validated();
 
             // Generate a new employee number
             $companyIdNumber = $this->generateNewEmployeeNo();
@@ -88,25 +79,27 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
         try {
-            $request->validate([
-                'lastname' => 'required|string|max:255',
-                'firstname' => 'required|string|max:255',
-                'middlename' => 'nullable|string|max:255',
-                'extension' => 'nullable|string|max:255',
-                'role_name' => 'required|string',
-                'profile_image' => 'nullable|string',
-                'phone_number' => 'nullable|string|max:255',
-                'email' => 'required|email|unique:users,email,' . $user->id,
-                'password' => 'nullable|min:8',
-            ]);
+            $validated = $request->validated();
 
-            $user->update($request->all());
-            return response()->json($user, 201);
+            // Handle password separately if provided
+            if (isset($validated['password'])) {
+                $validated['password'] = bcrypt($validated['password']);
+            }
+
+            $user->update($validated);
+
+            return response()->json([
+                'message' => "User has been updated successfully at " . now(),
+                'user' => $user
+            ], 200);
         } catch (Exception $e) {
-            return response()->json(['message' => 'Error updating user', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Error updating user',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

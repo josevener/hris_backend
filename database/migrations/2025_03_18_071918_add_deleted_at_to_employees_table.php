@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('payrolls', function (Blueprint $table) {
-            $table->unsignedBigInteger('payroll_items_id')->after('id')->nullable()->constrained('payroll_items')->onDelete('cascade');
+        Schema::table('employees', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('payrolls', function (Blueprint $table) {
-            $table->dropColumn('payroll_items_id');
+        Schema::table('employees', function (Blueprint $table) {
+            $table->dropSoftDeletes();
         });
     }
 };

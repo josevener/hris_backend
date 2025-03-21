@@ -9,11 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-
     public function up(): void
     {
-        Schema::table('payroll_items', function (Blueprint $table) {
-            $table->string('scope')->default('specific');
+        Schema::table('salaries', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('payroll_items', function (Blueprint $table) {
-            //
+        Schema::table('salaries', function (Blueprint $table) {
+            $table->dropSoftDeletes();
         });
     }
 };

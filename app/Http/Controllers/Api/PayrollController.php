@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePayrollRequest;
+use App\Http\Requests\UpdatePayrollRequest;
 use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\PayrollItem;
 use App\Models\Salary;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PayrollController extends Controller
 {
@@ -18,7 +21,25 @@ class PayrollController extends Controller
      */
     public function index()
     {
-        $payrolls = Payroll::with('employee.user', 'salary')->paginate(6);
+        $payrolls = Payroll::with([
+            'employee.user',
+            'salary',
+            'payroll_items' => function ($query) {
+                $query->where(function ($q) {
+                    // Specific scope: payroll_id and employee_id are not null
+                    $q->where('scope', 'specific')
+                        ->whereNotNull('payroll_id')
+                        ->whereNotNull('employee_id');
+                })->orWhere(function ($q) {
+                    // Global scope: payroll_id and employee_id are null
+                    $q->where('scope', 'global')
+                        ->whereNull('payroll_id')
+                        ->whereNull('employee_id');
+                });
+            }
+        ])
+            ->whereNull('deleted_at') // Only active payrolls
+            ->paginate(6);
         return response()->json($payrolls, 200);
     }
 
@@ -66,28 +87,48 @@ class PayrollController extends Controller
      */
     public function store(StorePayrollRequest $request)
     {
-        $payroll = Payroll::create($request->validated());
+        // try {
+        //     $payroll = Payroll::create($request->validated());
 
-        return response()->json(['payroll' => $payroll->load('employee')], 201);
+        //     $payroll_item = PayrollItem::where('employee_id', $payroll->employee_id)->first();
+        //     $payroll_item->update([
+        //         'payroll_id'  => $payroll->id
+        //     ]);
+        //     return response()->json(['payroll' => $payroll->load('employee')], 201);
+        // } catch (Exception $e) {
+        //     return response()->json('Error creating payroll for employee: ' . $e->getMessage());
+        // }
+
+        try {
+            return DB::transaction(function () use ($request) {
+                // Create the payroll record
+                $payroll = Payroll::create($request->validated());
+                // Update all payroll_items with matching employee_id
+                $updatedCount = PayrollItem::where('employee_id', $payroll->employee_id)
+                    ->whereNull('payroll_id') // Optional: Only update items not already assigned
+                    ->update(['payroll_id' => $payroll->id]);
+
+                if ($updatedCount === 0) {
+                    // Optional: Log or handle case where no items were updated
+                }
+
+                return response()->json($payroll->load('employee'), 201);
+            });
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Error creating payroll or updating payroll items: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
      * Update payroll details.
      */
-    public function update(Request $request, $id)
+    public function update(UpdatePayrollRequest $request, $id)
     {
         $payroll = Payroll::findOrFail($id);
 
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'salary_id' => 'required|exists:salaries,id',
-            'pay_date' => 'required|date',
-            'start_date' => 'required|date|before_or_equal:pay_date',
-            'end_date' => 'required|date|after_or_equal:start_date|before_or_equal:pay_date',
-            'status' => 'required|in:pending,processed,paid',
-        ]);
-
-        $payroll->update($request->all());
+        $payroll->update($request->validated());
 
         return response()->json(['payroll' => $payroll->load('employee.user', 'salary')], 200);
     }

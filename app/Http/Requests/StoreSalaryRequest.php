@@ -23,10 +23,9 @@ class StoreSalaryRequest extends FormRequest
     {
         return [
             'employee_id' => ['required', 'numeric', 'exists:employees,id'],
-            'basic_salary' => ['required', 'numeric'],
+            'basic_salary' => ['required', 'decimal:0,2'],
             'pay_period' => ['required', 'string'],
             'start_date' => ['required', 'date'],
-            'end_date' => ['nullable', 'date'],
         ];
     }
 }

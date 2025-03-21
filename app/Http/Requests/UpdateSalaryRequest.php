@@ -11,7 +11,7 @@ class UpdateSalaryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,10 +23,10 @@ class UpdateSalaryRequest extends FormRequest
     {
         return [
             'employee_id' => ['required', 'numeric'],
-            'basic_salary' => ['required', 'decimal'],
+            'basic_salary' => ['required', 'decimal:0,2'],
             'pay_period' => ['required', 'string'],
             'start_date' => ['required', 'date'],
-            'end_date' => ['nullable', 'date'],
+            'end_date' => ['required', 'date'],
         ];
     }
 }

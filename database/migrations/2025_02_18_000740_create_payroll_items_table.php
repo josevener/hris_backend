@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('payroll_id')->nullable();
             $table->unsignedBigInteger('employee_id')->nullable();
+            $table->unsignedBigInteger('payroll_cycles_id')->nullable();
             $table->enum('type', ['earning', 'deduction', 'contribution']);
             $table->string('category');
             $table->decimal('amount', 10, 2);
+            $table->string('scope')->default('specific');
             $table->timestamps();
         });
     }

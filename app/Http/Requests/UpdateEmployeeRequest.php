@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StorePayrollItemRequest extends FormRequest
+class UpdateEmployeeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +22,13 @@ class StorePayrollItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => 'nullable|exists:employees,id|required_if:scope,specific',
-            'payroll_cycles_id' => 'required|numeric',
-            'scope' => 'required|in:specific,global',
-            'type' => 'required|in:earning,deduction,contribution',
-            'category' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
+            'company_id_number' => 'required|string',
+            'birthdate' => 'nullable|date',
+            'reports_to' => 'nullable|string',
+            'gender' => 'nullable|string',
+            'user_id' => 'required|numeric',
+            'department_id' => 'required|numeric',
+            'designation_id' => 'required|numeric',
         ];
     }
 }
